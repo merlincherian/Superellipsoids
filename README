@@ -1,0 +1,13 @@
+Merlin Cherian
+CS 536
+HW 4 - Superellipsoids
+
+This program, evaluates a superellipsoid and approximates it with triangles.
+
+# Specifications
+  - The program is written in Python on Mac and the main executable file is name CG_hw4
+
+# Execution
+
+      Run the Makefile to create the executable and then run the following command:
+      ./CG_hw4 -u num_u -v num_v -F > out.iv

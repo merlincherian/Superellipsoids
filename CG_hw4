@@ -1,0 +1,251 @@
+#!/usr/bin/python
+# /*  Name:    Merlin Cherian
+#  *  Class:   CS 536 (Computer Graphics)
+#  *
+#  *
+#  */
+import numpy as np
+import argparse
+from decimal import *
+import math
+SIXPLACES = Decimal(10) ** -6
+points = []
+normals = []
+coordinates = []
+vertices = []
+radius = 0.1
+num_u = 0
+num_v = 0
+
+
+def gen_triangle_set(vertices):
+    triangle_coords = []
+    for i in range(num_u-1):
+        if i == num_u-2:
+            tri0 = [i + 1, 1, 0]
+        else:
+            tri0 = [i+1, i+2, 0]
+        triangle_coords.append(tri0)
+
+    for i in range(num_u-1):
+        if i == num_u - 2:
+            tri0 = [len(vertices) - 1, len(vertices)-num_u, (len(vertices) - num_u) + i]
+        else:
+            tri0 = [len(vertices)-1, (len(vertices)-(num_u-1))+i, (len(vertices)-num_u)+i]
+        triangle_coords.append(tri0)
+
+    vals = np.arange(0, len(vertices)-(num_u), num_u-1)
+    for i in range(0, len(vertices)-(num_u+1)):
+        if i+1 in vals:
+            tri0 = [(num_u) + i, ((num_u + 1) + i) - (num_u - 1), ((num_u + 1) + i) - 2 * (num_u - 1)]
+            tri1 = [(num_u) + i, ((num_u + 1) + i) - 2 * (num_u - 1), ((num_u + 1) + i) - (num_u)]
+
+        else:
+            tri0 = [(num_u)+i, (num_u+1)+i, i+2]
+            tri1 = [(num_u)+i, i+2, i+1]
+        triangle_coords.append(tri0)
+        triangle_coords.append(tri1)
+
+    return triangle_coords
+
+
+def gen_normals(u, v, A, B, C, s1, s2):
+    nx = float(Decimal((1.0/A)*c(v, 2.0-s1)*c(u, 2.0-s2)).quantize(SIXPLACES))
+    ny = float(Decimal((1.0/B)*c(v, 2.0-s1)*s(u, 2.0-s2)).quantize(SIXPLACES))
+    nz = float(Decimal((1.0/C)*s(v, 2.0-s1)).quantize(SIXPLACES))
+    return [nx, ny, nz]
+
+
+def gen_points(u, v, A, B, C, s1, s2):
+    x = float(Decimal(A*c(v, s1)*c(u, s2)).quantize(SIXPLACES))
+    y = float(Decimal(B*c(v, s1)*s(u, s2)).quantize(SIXPLACES))
+    z = float(Decimal(C*s(v, s1)).quantize(SIXPLACES))
+    return [x, y, z]
+
+
+def c(w, m):
+    cal = sgn(math.cos(w))*float(pow(abs(math.cos(w)), m))
+    return cal
+
+
+def s(w, m):
+    cal = sgn(math.sin(w))*float(pow(abs(math.sin(w)), m))
+    return cal
+
+
+def sgn(x):
+    if x < 0:
+        return -1
+    if x == 0:
+        return 0
+    if x > 0:
+        return 1
+
+
+def gen_u_values(val):
+    values = np.arange(-math.pi, math.pi, val).round(6)
+    return values
+
+
+def gen_v_values(val):
+    values = np.arange(-math.pi/2.0, math.pi/2.0, val).round(6)
+    return values
+
+
+def smooth_shaded():
+    print("#Inventor V2.0 ascii"
+          "\n"
+          "\n"
+          "ShapeHints {"
+          "\n"
+          "vertexOrdering        COUNTERCLOCKWISE"
+          "\n"
+          "}\n\n"
+          "Separator {\n"
+          "Coordinate3 { 	"
+          "\npoint [ ")
+
+    for i in range(len(vertices)):
+        print (' '.join(map(repr, vertices[i])) + ",")
+
+    print("]\n"
+          "} \nNormalBinding {\n"
+          "value        PER_VERTEX_INDEXED\n"
+          "}\n"
+          "Normal {\n"
+          "     vector [")
+
+    print ('0.0 0.0 1.0')
+    for i in range(num_u - 1, len(normals) - (num_u - 1)):
+        print (' '.join(map(repr, normals[i])) + ",")
+    print ('0.0 0.0 -1.0')
+
+    print("]\n"
+          "} \nIndexedFaceSet {\n"
+          "coordIndex [")
+
+    for i in range(len(triangles)):
+        print (', '.join(map(repr, triangles[i])) + ", -1,")
+
+    print(
+        "]\n}\n}\n")
+
+
+def flat_shaded():
+    print("#Inventor V2.0 ascii"
+          "\n"
+          "\n"
+          "ShapeHints {"
+          "\n"
+          "vertexOrdering        COUNTERCLOCKWISE"
+          "\n"
+          "}\n\n"
+          "Separator {\n"
+          "Coordinate3 { 	"
+          "\npoint [ ")
+    for i in range(len(vertices)):
+        print (' '.join(map(repr, vertices[i])) + ",")
+    print("]\n"
+          "} \n"
+          "NormalBinding {\n"
+          "value        PER_VERTEX_INDEXED\n"
+          "}\n"
+          "IndexedFaceSet {\n"
+          "coordIndex [")
+    for i in range(len(triangles)):
+        print (', '.join(map(repr, triangles[i])) + ", -1,")
+
+    print(
+        "]\n}\n}\n")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-u', '--u', help='num_u argument', required=False)
+    parser.add_argument('-v', '--v', help='num_v argument', required=False)
+    parser.add_argument('-r', '--r', help='s1 argument', required=False)
+    parser.add_argument('-t', '--t', help='s2 argument', required=False)
+    parser.add_argument('-A', '--A', help='A argument', required=False)
+    parser.add_argument('-B', '--B', help='B argument', required=False)
+    parser.add_argument('-C', '--C', help='C argument', required=False)
+    parser.add_argument('-F', action='store_true')
+    parser.add_argument('-S', action='store_true')
+    args = vars(parser.parse_args())
+
+    if args['u']:
+        global num_u
+        num_u = int(args['u'])
+    else:
+        num_u = 19
+    if args['v']:
+        global num_v
+        num_v = int(args['v'])
+    else:
+        num_v = 9
+    if args['r']:
+        global s1
+        s1 = float(args['r'])
+    else:
+        s1 = 1
+    if args['t']:
+        global s2
+        s2 = float(args['t'])
+    else:
+        s2 = 1
+    if args['A']:
+        global A
+        A = float(args['A'])
+    else:
+        A = 1
+    if args['B']:
+        global B
+        B = float(args['B'])
+    else:
+        B = 1
+    if args['C']:
+        global C
+        C = float(args['C'])
+    else:
+        C = 1
+
+    u_vals = np.linspace(0.0, 2*np.pi, num_u)
+    v_vals = np.linspace(np.pi/2.0, -np.pi/2.0, num_v)
+
+    global points, normals
+    p = []
+    n = []
+    for j in range(num_v):
+        for i in range(num_u-1):
+            p.append(gen_points(u_vals[i], v_vals[j], A, B, C, s1, s2))
+            n.append(gen_normals(u_vals[i], v_vals[j], A, B, C, s1, s2))
+    points = p
+    normals = n
+
+    global vertices
+    vertices.append([0.0, 0.0, 1.0])
+    for i in range(num_u - 1, len(points) - (num_u - 1)):
+        vertices.append(points[i])
+    vertices.append([0.0, 0.0, -1.0])
+
+    global coordinates
+    for i in range(num_u):
+        p = []
+        n = []
+        for j in range(num_v):
+            p.append(gen_points(u_vals[i], v_vals[j], A, B, C, s1, s2))
+            n.append(gen_normals(u_vals[i], v_vals[j], A, B, C, s1, s2))
+        coordinates.append(p)
+
+    global triangles
+    triangles = gen_triangle_set(vertices)
+
+    if args['F']:
+        flat_shaded()
+    elif args['S']:
+        smooth_shaded()
+    else:
+        flat_shaded()
+
+
+if __name__ == '__main__':
+    main()
